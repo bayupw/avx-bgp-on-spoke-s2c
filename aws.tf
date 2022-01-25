@@ -3,29 +3,29 @@ data "aws_region" "current" {}
 #Need to pull VPC ID from any existing public subnet ids, if specified
 data "aws_subnet" "public_subnet" {
   count = var.public_subnet_ids != null ? 1 : 0
-  id = var.public_subnet_ids[count.index]
+  id    = var.public_subnet_ids[count.index]
 }
 
 #Need to pull route tables for existing public subnet ids
 data "aws_route_table" "public_rtb" {
-  count = var.public_subnet_ids != null ? length(var.public_subnet_ids) : 0
+  count     = var.public_subnet_ids != null ? length(var.public_subnet_ids) : 0
   subnet_id = var.public_subnet_ids[count.index]
 }
 
 #Need to pull cidrs for existing BGPoLAN subnets
 data "aws_subnet" "bgpolan_subnet" {
   count = var.bgpolan_subnet_ids != null ? length(var.bgpolan_subnet_ids) : 0
-  id = var.bgpolan_subnet_ids[count.index]
+  id    = var.bgpolan_subnet_ids[count.index]
 }
 
 #Create AWS VPC and Subnets
 resource "aws_vpc" "csr_aws_vpc" {
-  count = var.public_subnet_ids != null ? 0 : 1
+  count      = var.public_subnet_ids != null ? 0 : 1
   cidr_block = var.network_cidr
 }
 
 resource "aws_subnet" "csr_aws_public_subnet" {
-  count = var.public_subnet_ids != null ? 0 : length(var.public_subnets)
+  count                   = var.public_subnet_ids != null ? 0 : length(var.public_subnets)
   vpc_id                  = aws_vpc.csr_aws_vpc[0].id
   cidr_block              = var.public_subnets[count.index]
   map_public_ip_on_launch = false
@@ -37,7 +37,7 @@ resource "aws_subnet" "csr_aws_public_subnet" {
 }
 
 resource "aws_subnet" "csr_aws_private_subnet" {
-  count = var.private_subnet_ids != null ? 0 : try(length(var.private_subnets), 0)
+  count                   = var.private_subnet_ids != null ? 0 : try(length(var.private_subnets), 0)
   vpc_id                  = aws_vpc.csr_aws_vpc[0].id
   cidr_block              = var.private_subnets[count.index]
   map_public_ip_on_launch = false
@@ -50,7 +50,7 @@ resource "aws_subnet" "csr_aws_private_subnet" {
 
 #Create IGW for public subnet
 resource "aws_internet_gateway" "csr_igw" {
-  count = var.public_subnet_ids != null ? 0 : 1
+  count  = var.public_subnet_ids != null ? 0 : 1
   vpc_id = aws_vpc.csr_aws_vpc[0].id
 
   tags = {
@@ -60,7 +60,7 @@ resource "aws_internet_gateway" "csr_igw" {
 
 #Create AWS Public and Private Subnet Route Tables
 resource "aws_route_table" "csr_public_rtb" {
-  count = var.public_subnet_ids != null ? 0 : length(var.public_subnets)
+  count  = var.public_subnet_ids != null ? 0 : length(var.public_subnets)
   vpc_id = aws_vpc.csr_aws_vpc[0].id
 
   tags = {
@@ -69,7 +69,7 @@ resource "aws_route_table" "csr_public_rtb" {
 }
 
 resource "aws_route_table" "csr_private_rtb" {
-  count = var.private_subnet_ids != null ? 0 : var.private_subnets != null ? length(var.private_subnets) : 0
+  count  = var.private_subnet_ids != null ? 0 : var.private_subnets != null ? length(var.private_subnets) : 0
   vpc_id = aws_vpc.csr_aws_vpc[0].id
 
   tags = {
@@ -78,7 +78,7 @@ resource "aws_route_table" "csr_private_rtb" {
 }
 
 resource "aws_route" "csr_public_default" {
-  count = var.public_subnet_ids != null ? 0 : length(var.public_subnets)
+  count                  = var.public_subnet_ids != null ? 0 : length(var.public_subnets)
   route_table_id         = aws_route_table.csr_public_rtb[count.index].id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.csr_igw[0].id
@@ -86,7 +86,7 @@ resource "aws_route" "csr_public_default" {
 }
 
 resource "aws_route" "csr_private_default" {
-  count = var.private_subnet_ids != null ? 0 : var.private_subnets != null ? length(var.private_subnets) : 0
+  count                  = var.private_subnet_ids != null ? 0 : var.private_subnets != null ? length(var.private_subnets) : 0
   route_table_id         = aws_route_table.csr_private_rtb[count.index].id
   destination_cidr_block = "0.0.0.0/0"
   network_interface_id   = aws_network_interface.CSR_Private_ENI[count.index].id
@@ -94,13 +94,13 @@ resource "aws_route" "csr_private_default" {
 }
 
 resource "aws_route_table_association" "csr_public_rtb_assoc" {
-  count = var.public_subnet_ids != null ? 0 : length(var.public_subnets)
+  count          = var.public_subnet_ids != null ? 0 : length(var.public_subnets)
   subnet_id      = aws_subnet.csr_aws_public_subnet[count.index].id
   route_table_id = aws_route_table.csr_public_rtb[count.index].id
 }
 
 resource "aws_route_table_association" "csr_private_rtb_assoc" {
-  count = var.private_subnet_ids != null ? 0 : var.private_subnets != null ? length(var.private_subnets) : 0
+  count          = var.private_subnet_ids != null ? 0 : var.private_subnets != null ? length(var.private_subnets) : 0
   subnet_id      = aws_subnet.csr_aws_private_subnet[count.index].id
   route_table_id = aws_route_table.csr_private_rtb[count.index].id
 }
@@ -111,7 +111,7 @@ resource "aws_security_group" "csr_public_sg" {
   vpc_id      = var.public_subnet_ids != null ? data.aws_subnet.public_subnet[0].vpc_id : aws_vpc.csr_aws_vpc[0].id
 
   lifecycle {
-    ignore_changes = [ vpc_id ]
+    ignore_changes = [vpc_id]
   }
 
   tags = {
@@ -125,7 +125,7 @@ resource "aws_security_group" "csr_private_sg" {
   vpc_id      = var.public_subnet_ids != null ? data.aws_subnet.public_subnet[0].vpc_id : aws_vpc.csr_aws_vpc[0].id
 
   lifecycle {
-    ignore_changes = [ vpc_id ]
+    ignore_changes = [vpc_id]
   }
 
   tags = {
@@ -180,7 +180,7 @@ resource "aws_security_group_rule" "csr_public_ntp" {
   protocol          = "udp"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.csr_public_sg.id
-  
+
   lifecycle {
     ignore_changes = all
   }
@@ -206,7 +206,7 @@ resource "aws_security_group_rule" "csr_public_esp" {
   protocol          = "udp"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.csr_public_sg.id
-  
+
   lifecycle {
     ignore_changes = all
   }
@@ -265,7 +265,7 @@ resource "aws_security_group_rule" "csr_private_egress" {
 }
 
 resource "aws_network_interface" "CSR_Public_ENI" {
-  count = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.public_subnets)
+  count             = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.public_subnets)
   subnet_id         = var.public_subnet_ids != null ? var.public_subnet_ids[count.index] : aws_subnet.csr_aws_public_subnet[count.index].id
   security_groups   = [aws_security_group.csr_public_sg.id]
   source_dest_check = false
@@ -280,9 +280,9 @@ resource "aws_network_interface" "CSR_Public_ENI" {
 }
 
 resource "aws_network_interface" "CSR_Private_ENI" {
-  count = var.private_subnet_ids != null ? length(var.private_subnet_ids) : var.private_subnets != null ? length(var.private_subnets) : 0
-  subnet_id       = var.private_subnet_ids != null ? var.private_subnet_ids[count.index] : aws_subnet.csr_aws_private_subnet[count.index].id
-  security_groups = [aws_security_group.csr_private_sg.id]
+  count             = var.private_subnet_ids != null ? length(var.private_subnet_ids) : var.private_subnets != null ? length(var.private_subnets) : 0
+  subnet_id         = var.private_subnet_ids != null ? var.private_subnet_ids[count.index] : aws_subnet.csr_aws_private_subnet[count.index].id
+  security_groups   = [aws_security_group.csr_private_sg.id]
   source_dest_check = false
 
   tags = {
@@ -296,10 +296,10 @@ resource "aws_network_interface" "CSR_Private_ENI" {
 }
 
 resource "aws_network_interface" "CSR_BGPOLAN_ENI" {
-  count = var.bgpolan_subnet_ids != null ? length(var.bgpolan_subnet_ids) : 0
-  subnet_id       = var.bgpolan_subnet_ids[count.index]
-  private_ips     = [cidrhost(data.aws_subnet.bgpolan_subnet[count.index].cidr_block,tonumber(substr(var.hostname,-1,-1))+4)]
-  security_groups = [aws_security_group.csr_private_sg.id]
+  count             = var.bgpolan_subnet_ids != null ? length(var.bgpolan_subnet_ids) : 0
+  subnet_id         = var.bgpolan_subnet_ids[count.index]
+  private_ips       = [cidrhost(data.aws_subnet.bgpolan_subnet[count.index].cidr_block, tonumber(substr(var.hostname, -1, -1)) + 4)]
+  security_groups   = [aws_security_group.csr_private_sg.id]
   source_dest_check = false
 
   lifecycle {
@@ -312,14 +312,14 @@ resource "aws_network_interface" "CSR_BGPOLAN_ENI" {
 }
 
 resource "aws_network_interface_attachment" "bgpolan_attachment" {
-  count = var.bgpolan_subnet_ids != null ? length(var.bgpolan_subnet_ids) : 0
+  count                = var.bgpolan_subnet_ids != null ? length(var.bgpolan_subnet_ids) : 0
   instance_id          = aws_instance.CSROnprem[count.index].id
   network_interface_id = aws_network_interface.CSR_BGPOLAN_ENI[count.index].id
   device_index         = 2
 }
 
 resource "aws_eip" "csr_public_eip" {
-  count = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.public_subnets)
+  count             = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.public_subnets)
   vpc               = true
   network_interface = aws_network_interface.CSR_Public_ENI[count.index].id
   depends_on        = [aws_internet_gateway.csr_igw]
@@ -335,7 +335,7 @@ resource "aws_key_pair" "csr_deploy_key" {
   public_key = tls_private_key.csr_deploy_key[0].public_key_openssh
 
   lifecycle {
-    ignore_changes = [ tags ]
+    ignore_changes = [tags]
   }
 }
 
@@ -351,7 +351,7 @@ data "aws_ami" "amazon-linux" {
 }
 
 data "aws_ami" "csr_aws_ami" {
-  owners = ["aws-marketplace"]
+  owners      = ["aws-marketplace"]
   most_recent = true
 
   filter {
@@ -375,18 +375,18 @@ resource "aws_instance" "test_client" {
 }
 
 data "aws_network_interface" "test_client_if" {
-  count                       = var.create_client ? var.private_subnet_ids != null ? length(var.private_subnet_ids) : length(var.private_subnets) : 0
+  count = var.create_client ? var.private_subnet_ids != null ? length(var.private_subnet_ids) : length(var.private_subnets) : 0
   id    = aws_instance.test_client[count.index].primary_network_interface_id
 }
 
 data "aws_instance" "CSROnprem" {
-  count = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.public_subnets)
-  instance_id = aws_instance.CSROnprem[count.index].id
+  count         = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.public_subnets)
+  instance_id   = aws_instance.CSROnprem[count.index].id
   get_user_data = true
 }
 
 resource "aws_instance" "CSROnprem" {
-  count = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.public_subnets)
+  count         = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.public_subnets)
   ami           = data.aws_ami.csr_aws_ami.id
   instance_type = var.instance_type
   key_name      = var.key_name == null ? "${var.hostname}_sshkey" : var.key_name
@@ -403,7 +403,7 @@ resource "aws_instance" "CSROnprem" {
     priv_conn_keys = keys(aviatrix_transit_external_device_conn.privConns)
     csr_eip        = aws_eip.csr_public_eip[count.index].public_ip
     csr_pip        = tolist(aws_network_interface.CSR_Public_ENI[count.index].private_ips)[0]
-    gateway        = data.aviatrix_transit_gateway.avtx_gateways
+    gateway        = data.aviatrix_spoke_gateway.avtx_gateways
     hostname       = "${var.hostname}-${count.index + 1}"
     is_ha          = local.is_ha
     test_client_ip = var.create_client ? data.aws_network_interface.test_client_if[count.index].private_ip : ""
@@ -413,7 +413,7 @@ resource "aws_instance" "CSROnprem" {
   })
 
   lifecycle {
-    ignore_changes = [ ami ]
+    ignore_changes = [ami]
   }
 
   tags = {

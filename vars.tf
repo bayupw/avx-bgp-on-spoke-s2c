@@ -4,42 +4,42 @@ variable "key_name" {
   default     = null
 }
 variable "network_cidr" {
-  type = string
+  type        = string
   description = "CSR Virtual Network CIDR block"
 }
 variable "tunnel_proto" {
-  type = string
+  type    = string
   default = "IPsec"
 }
 variable "prioritize" {
   description = "Possible values: price, performance. Instance ami adjusted depending on this"
-  type = string
-  default = "price"
+  type        = string
+  default     = "price"
 }
 variable "public_subnets" {
   description = "Create CSR Public subnets"
-  type = list(string)
-  default = null
+  type        = list(string)
+  default     = null
 }
 variable "public_subnet_ids" {
   description = "Use existing CSR Public subnet ids"
-  type = list(string)
-  default = null
+  type        = list(string)
+  default     = null
 }
 variable "private_subnets" {
   description = "Create CSR Private subnets"
-  type = list(string)
-  default = null
+  type        = list(string)
+  default     = null
 }
 variable "private_subnet_ids" {
   description = "Use existing CSR Private subnet ids"
-  type = list(string)
-  default = null
+  type        = list(string)
+  default     = null
 }
 variable "bgpolan_subnet_ids" {
   description = "Existing BGP on LAN subnet ids"
-  type = list(string)
-  default = null
+  type        = list(string)
+  default     = null
 }
 variable "instance_type" {
   description = "AWS instance type"
@@ -87,7 +87,7 @@ variable "az2" {
 }
 
 locals {
-  
+
   #HA enabled/disabled
   is_ha = try(length(var.public_subnet_ids), 0) > 1 || try(length(var.public_subnets), 0) > 1 ? true : false
 
