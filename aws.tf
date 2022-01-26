@@ -22,6 +22,10 @@ data "aws_subnet" "bgpolan_subnet" {
 resource "aws_vpc" "csr_aws_vpc" {
   count      = var.public_subnet_ids != null ? 0 : 1
   cidr_block = var.network_cidr
+  
+  tags = {
+    "Name" = "${var.hostname}"
+  }
 }
 
 resource "aws_subnet" "csr_aws_public_subnet" {
