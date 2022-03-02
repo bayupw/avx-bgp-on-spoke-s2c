@@ -13,6 +13,6 @@ output "ssh_cmd_client" {
 output "user_data" {
   value = [for config in data.aws_instance.CSROnprem.*.user_data_base64 : base64decode(config)]
 }
-output "CSR_Private_ENI" {
-  value = aws_network_interface.CSR_Private_ENI
+output "CSR_Private_ENI_id" {
+  value = aws_network_interface.CSR_Private_ENI.id
 }
